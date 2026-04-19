@@ -281,11 +281,14 @@ function drawHand(view){
 
   /* overlay zonas frotadas */
   var mask=curView==='dorso'?dorsoMask:palmaMask;
-  var imgd=hCtx.createImageData(220,220);
+  hCtx.fillStyle='rgba(255,255,255,0.24)';
   for(var i=0;i<220*220;i++){
-    if(mask[i]){imgd.data[i*4]=255;imgd.data[i*4+1]=255;imgd.data[i*4+2]=255;imgd.data[i*4+3]=60;}
+    if(mask[i]){
+      var x=i%220;
+      var y=(i/220)|0;
+      hCtx.fillRect(x,y,1,1);
+    }
   }
-  hCtx.putImageData(imgd,0,0);
 
   /* gérmenes */
   var gpos=germPos(view);
