@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Optisalud – Lavado de Manos</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:#f0f4f2;display:flex;align-items:flex-start;justify-content:center;padding:16px 0 32px}
+.app{width:100%;max-width:400px;padding:0 12px}
+.screen{display:none;flex-direction:column;align-items:center;padding:24px 18px;text-align:center;background:#fff;border-radius:16px;border:1px solid #e0e0e0;box-shadow:0 2px 12px rgba(0,0,0,0.07)}
+.screen.active{display:flex}
+/* ======================================================
+   COLORES PRINCIPALES — cambia aquí para personalizar
+   ====================================================== */
+:root {
+  --verde:    #1D9E75;   /* color principal botones y marca  */
+  --verdeDk:  #0F6E56;   /* hover / bordes                   */
+  --verdeLt:  #E1F5EE;   /* fondos suaves                    */
+  --verdeXDk: #085041;   /* texto sobre fondo verde          */
+  --rojo:     #E24B4A;   /* botón "No"                       */
+}
+/* ====================================================== */
+.brand{font-size:22px;font-weight:700;color:var(--verde);margin-bottom:4px}
+.btn{padding:12px 28px;border-radius:8px;border:none;background:var(--verde);color:#fff;font-size:15px;font-weight:600;cursor:pointer;-webkit-appearance:none}
+.btn:active{background:var(--verdeDk)}
+.btn-out{background:#fff;border:2px solid var(--verde);color:var(--verde)}
+.btn-out:active{background:var(--verdeLt)}
+.btn-si{background:var(--verde);color:#fff}
+.btn-no{background:var(--rojo);color:#fff}
+.quote-box{background:var(--verdeLt);border-left:4px solid var(--verde);border-radius:8px;padding:14px 16px;font-size:13px;color:var(--verdeXDk);line-height:1.75;font-style:italic;max-width:320px;margin:12px 0;text-align:left}
+.inst-box{background:#f7f7f5;border-radius:8px;padding:14px 16px;text-align:left;width:100%;max-width:320px;margin:12px 0}
+.inst-box li{font-size:13px;color:#555;margin:6px 0 6px 16px;line-height:1.5}
+.prog-bar{width:100%;max-width:340px;height:7px;background:#e0e0e0;border-radius:4px;margin-bottom:16px;overflow:hidden}
+.prog-fill{height:100%;background:var(--verde);border-radius:4px;transition:width .4s}
+.step-lbl{font-size:12px;color:#999;margin-bottom:6px}
+.scene-box{width:100%;max-width:320px;height:150px;background:#eef5fb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:64px;margin:12px 0;border:1px solid #cde0f0}
+.scene-title{font-size:16px;font-weight:700;color:#222;margin:4px 0 6px}
+.scene-desc{font-size:13px;color:#666;line-height:1.65;max-width:320px;margin-bottom:18px}
+.btn-row{display:flex;gap:12px;width:100%;max-width:320px}
+.btn-row .btn{flex:1;padding:13px 8px;font-size:14px}
+.side-tabs{display:flex;gap:8px;margin-bottom:10px}
+.side-tab{padding:6px 18px;border-radius:20px;font-size:13px;cursor:pointer;border:1px solid #bbb;background:#fff;color:#666;font-weight:600}
+.side-tab.active{background:var(--verde);color:#fff;border-color:var(--verde)}
+.wash-wrap{width:220px;height:220px;position:relative;margin:6px auto 10px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair}
+#hand-canvas{display:block;border-radius:10px}
+.clean-bar{width:200px;height:9px;background:#ddd;border-radius:5px;overflow:hidden;margin:6px auto}
+.clean-fill{height:100%;background:var(--verde);border-radius:5px;width:0%;transition:width .2s}
+.hint{font-size:11px;color:#aaa;margin-top:6px}
+.fb-box{padding:14px 16px;border-radius:8px;width:100%;max-width:320px;margin:10px 0;font-size:13px;line-height:1.6;text-align:left}
+.fb-ok{background:#EAF3DE;color:#2e5c0e;border:1px solid #97C459}
+.fb-err{background:#FCEBEB;color:#7a1a1a;border:1px solid #F09595}
+.score-ring{width:100px;height:100px;border-radius:50%;background:var(--verdeLt);border:3px solid var(--verde);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:14px auto}
+.score-n{font-size:28px;font-weight:700;color:var(--verde)}
+.score-lbl{font-size:11px;color:var(--verdeDk)}
+/* ======================================================
+   LOGO — reemplaza el SVG de abajo con tu imagen:
+   <img src="logo.png" style="width:82px;height:82px;border-radius:50%">
+   o cambia el color del círculo con --verde arriba
+   ====================================================== */
+.logo-wrap{width:82px;height:82px;border-radius:50%;background:var(--verde);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- S1: Bienvenida -->
+<div id="s1" class="screen active">
+  <div class="logo-wrap">
+    <!-- LOGO: reemplaza este SVG por <img src="tu-logo.png" style="width:60px"> -->
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+      <path d="M24 5C16 5 10 11 10 20C10 31 24 43 24 43C24 43 38 31 38 20C38 11 32 5 24 5Z" fill="white"/>
+      <path d="M18 20L22 24L30 14" stroke="#1D9E75" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="brand">Optisalud</div>
+  <div style="font-size:13px;color:var(--verdeDk);font-weight:600;margin-bottom:14px">Seguridad del Paciente</div>
+  <div class="quote-box">"En Optisalud cuidamos de ti; una atención segura está en tus manos, por un buen cuidado <strong>#lavatelasmanos</strong>"</div>
+  <div style="font-size:12px;color:#bbb;margin-bottom:20px">🏥 Campaña de higiene de manos</div>
+  <button class="btn" onclick="goTo('s2')">Comenzar</button>
+</div>
+
+<!-- S2: Instrucciones -->
+<div id="s2" class="screen">
+  <div style="font-size:42px;margin-bottom:10px">👐</div>
+  <div class="brand" style="margin-bottom:4px">Instrucciones</div>
+  <div class="quote-box">"En Optisalud prima la seguridad del paciente, el lavado de manos es fundamental en la atención en salud, cuida de ti y de los tuyos."</div>
+  <div class="inst-box"><ul>
+    <li>Se presentarán <strong>5 situaciones clínicas</strong> en orden aleatorio</li>
+    <li>Decide si el trabajador de salud debe o no lavarse las manos</li>
+    <li>Si la respuesta es <strong>Sí</strong>, ¡desliza el dedo sobre la mano para quitar los gérmenes!</li>
+    <li>Limpia el <strong>dorso</strong> y la <strong>palma</strong> completamente</li>
+    <li>Al final recibirás una calificación según tus aciertos</li>
+  </ul></div>
+  <button class="btn" onclick="startGame()" style="margin-top:4px">Siguiente →</button>
+</div>
+
+<!-- S3: Escenario -->
+<div id="s3" class="screen">
+  <div class="step-lbl" id="step-lbl">Situación 1 de 5</div>
+  <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="scene-box" id="scene-icon"></div>
+  <div class="scene-title" id="scene-title"></div>
+  <div class="scene-desc" id="scene-desc"></div>
+  <div class="btn-row">
+    <button class="btn btn-si" onclick="answer(true)">✔ Sí, lavar</button>
+    <button class="btn btn-no" onclick="answer(false)">✘ No es necesario</button>
+  </div>
+</div>
+
+<!-- S4: Lavado -->
+<div id="s4" class="screen">
+  <div style="font-size:15px;font-weight:700;color:#222;margin-bottom:2px">¡Correcto! Ahora lava las manos</div>
+  <div style="font-size:12px;color:#888;margin-bottom:10px">Desliza el dedo sobre la mano para quitar los gérmenes</div>
+  <div class="side-tabs">
+    <button class="side-tab active" id="tab-dorso" onclick="setView('dorso')">Dorso</button>
+    <button class="side-tab" id="tab-palma" onclick="setView('palma')">Palma</button>
+  </div>
+  <div class="wash-wrap">
+    <canvas id="hand-canvas" width="220" height="220"></canvas>
+  </div>
+  <div class="clean-bar"><div class="clean-fill" id="clean-fill"></div></div>
+  <div style="font-size:13px;color:#555;margin:5px 0 2px;font-weight:600" id="clean-pct">0% limpio</div>
+  <div class="hint">Frota el dorso y la palma hasta limpiar todo</div>
+</div>
+
+<!-- S5: Feedback -->
+<div id="s5" class="screen">
+  <div style="font-size:16px;font-weight:700;margin-bottom:8px" id="fb-title"></div>
+  <div class="fb-box" id="fb-box"></div>
+  <div style="font-size:12px;color:#888;margin:6px 0 18px;font-style:italic" id="fb-sub"></div>
+  <button class="btn" id="next-btn" onclick="nextScenario()">Siguiente situación →</button>
+</div>
+
+<!-- S6: Resultados -->
+<div id="s6" class="screen">
+  <div style="font-size:36px;margin-bottom:8px">🏆</div>
+  <div class="brand" style="margin-bottom:4px">Resultados</div>
+  <div class="score-ring">
+    <span class="score-n" id="final-sc">0/5</span>
+    <span class="score-lbl">aciertos</span>
+  </div>
+  <div style="font-size:28px;font-weight:700;margin:8px 0" id="grade"></div>
+  <div style="font-size:14px;color:#666;margin-bottom:12px;max-width:300px;line-height:1.6" id="grade-msg"></div>
+  <div class="quote-box" style="font-size:12px">"El lavado de manos es la medida más sencilla y efectiva para prevenir infecciones. ¡Tus manos salvan vidas!"</div>
+  <button class="btn btn-out" style="margin-top:16px" onclick="restartGame()">Jugar de nuevo</button>
+</div>
+
+</div>
+<script>
+var SC=[
+  {title:"Escritorio y papeles",desc:"Un trabajador de salud termina de escribir en el computador y se levanta a revisar unos papeles en la misma oficina.",icon:"💻",req:false,fb:"No es necesario realizar las acciones de atención segura en este momento."},
+  {title:"Llamado a valoración",desc:"Se hace un llamado a un paciente para iniciar su proceso de valoración clínica.",icon:"📋",req:true,fb:"Se requiere lavado de manos para proteger al paciente."},
+  {title:"Revisión con contacto directo",desc:"El profesional de salud revisa un paciente teniendo contacto físico directo con él durante la atención.",icon:"🩺",req:true,fb:"Se requiere lavado de manos para proteger al paciente y a nosotros mismos."},
+  {title:"Lectura de un libro",desc:"El trabajador estaba leyendo un libro de texto médico en la sala de descanso y acaba de dejarlo.",icon:"📖",req:false,fb:"No es necesario realizar las acciones de atención segura en este momento."},
+  {title:"Ingreso al quirófano",desc:"El cirujano se dispone a entrar al quirófano para realizar una intervención quirúrgica a un paciente.",icon:"🏥",req:true,fb:"Se requiere lavado de manos para proteger al paciente y a nosotros mismos."}
+];
+
+var order=[],cur=0,score=0;
+var cleanDorso=0,cleanPalma=0,curView='dorso';
+var painting=false;
+var dorsoMask,palmaMask;
+var hCanvas,hCtx;
+var feedbackGiven=false;
+
+function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+function goTo(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function startGame(){order=shuffle(SC);cur=0;score=0;loadScene();goTo('s3');}
+function restartGame(){order=shuffle(SC);cur=0;score=0;loadScene();goTo('s3');}
+function loadScene(){
+  var s=order[cur];
+  document.getElementById('step-lbl').textContent='Situación '+(cur+1)+' de 5';
+  document.getElementById('prog-fill').style.width=(cur/5*100)+'%';
+  document.getElementById('scene-icon').innerHTML='<span style="font-size:62px">'+s.icon+'</span>';
+  document.getElementById('scene-title').textContent=s.title;
+  document.getElementById('scene-desc').textContent=s.desc;
+}
+function answer(val){
+  var s=order[cur];
+  var correct=(val===s.req);
+  if(correct&&val===true){initWash();goTo('s4');}
+  else{showFeedback(correct,s);}
+}
+
+/* ---- DIBUJO DE MANO (compatible con todos los navegadores) ---- */
+function drawEllipse(ctx,cx,cy,rx,ry){
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.scale(rx,ry);
+  ctx.beginPath();
+  ctx.arc(0,0,1,0,Math.PI*2);
+  ctx.restore();
+}
+
+function drawHand(view){
+  if(!hCtx)return;
+  hCtx.clearRect(0,0,220,220);
+
+  /* --- colores piel --- */
+  var skin   ='#E8A882';
+  var skinDk ='#C47050';
+  var skinMd ='#D48860';
+  var skinLt ='#F0C0A0';
+  var nail   ='#F0D0C8';
+
+  if(view==='dorso'){
+    /* Palma */
+    hCtx.fillStyle=skin;
+    hCtx.save();hCtx.translate(110,148);hCtx.scale(52,58);
+    hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+
+    /* Dedos dorso */
+    var fd=[
+      {cx:72,cy:76,rx:12,ry:40,r:-0.18},
+      {cx:95,cy:63,rx:12,ry:46,r:-0.06},
+      {cx:119,cy:63,rx:12,ry:46,r:0.06},
+      {cx:143,cy:70,rx:11,ry:42,r:0.18},
+      {cx:58,cy:105,rx:9,ry:26,r:-0.48}
+    ];
+    fd.forEach(function(f){
+      hCtx.save();hCtx.translate(f.cx,f.cy);hCtx.rotate(f.r);
+      /* dedo */
+      hCtx.fillStyle=skin;
+      hCtx.save();hCtx.scale(f.rx,f.ry);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+      /* uña base */
+      hCtx.fillStyle=skinDk;
+      hCtx.save();hCtx.translate(0,-f.ry+12);hCtx.scale(f.rx-2,6);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+      /* uña */
+      hCtx.fillStyle=nail;
+      hCtx.save();hCtx.translate(0,-f.ry+12);hCtx.scale(f.rx-4,5);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+      /* nudillos */
+      hCtx.strokeStyle=skinDk;hCtx.lineWidth=0.8;
+      for(var k=0;k<2;k++){
+        var ky=-f.ry*0.25+k*11;
+        hCtx.beginPath();hCtx.moveTo(-f.rx+3,ky);hCtx.quadraticCurveTo(0,ky-3,f.rx-3,ky);hCtx.stroke();
+      }
+      hCtx.restore();
+    });
+    /* tendones */
+    hCtx.strokeStyle=skinDk;hCtx.lineWidth=0.9;
+    [[90,122,95,168],[110,118,110,170],[130,122,125,168]].forEach(function(l){
+      hCtx.beginPath();hCtx.moveTo(l[0],l[1]);hCtx.bezierCurveTo(l[0],l[1]+16,l[2],l[3]-16,l[2],l[3]);hCtx.stroke();
+    });
+
+  } else {
+    /* Palma interior */
+    hCtx.fillStyle=skinLt;
+    hCtx.save();hCtx.translate(110,150);hCtx.scale(53,56);
+    hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+
+    /* Dedos palma */
+    var fp=[
+      {cx:72,cy:78,rx:12,ry:40,r:-0.18},
+      {cx:95,cy:64,rx:12,ry:46,r:-0.06},
+      {cx:119,cy:64,rx:12,ry:46,r:0.06},
+      {cx:143,cy:71,rx:11,ry:42,r:0.18},
+      {cx:58,cy:106,rx:9,ry:26,r:-0.48}
+    ];
+    fp.forEach(function(f){
+      hCtx.save();hCtx.translate(f.cx,f.cy);hCtx.rotate(f.r);
+      hCtx.fillStyle=skinLt;
+      hCtx.save();hCtx.scale(f.rx,f.ry);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+      hCtx.strokeStyle=skinMd;hCtx.lineWidth=0.6;
+      hCtx.save();hCtx.scale(f.rx,f.ry);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.stroke();
+      hCtx.strokeStyle=skinMd;hCtx.lineWidth=0.7;
+      [-f.ry*0.2,f.ry*0.1].forEach(function(py){
+        hCtx.beginPath();hCtx.moveTo(-f.rx+3,py);hCtx.quadraticCurveTo(0,py-2,f.rx-3,py);hCtx.stroke();
+      });
+      hCtx.restore();
+    });
+    /* líneas de la palma */
+    hCtx.strokeStyle=skinMd;hCtx.lineWidth=1.2;
+    hCtx.beginPath();hCtx.moveTo(76,128);hCtx.bezierCurveTo(90,120,126,122,148,130);hCtx.stroke();
+    hCtx.beginPath();hCtx.moveTo(76,143);hCtx.bezierCurveTo(96,136,130,137,150,144);hCtx.stroke();
+    hCtx.beginPath();hCtx.moveTo(91,118);hCtx.bezierCurveTo(83,136,79,156,83,175);hCtx.stroke();
+    /* monte de Venus */
+    hCtx.fillStyle=skinMd;
+    hCtx.save();hCtx.translate(108,153);hCtx.scale(16,19);
+    hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+  }
+
+  /* overlay zonas frotadas */
+  var mask=curView==='dorso'?dorsoMask:palmaMask;
+  var imgd=hCtx.createImageData(220,220);
+  for(var i=0;i<220*220;i++){
+    if(mask[i]){imgd.data[i*4]=255;imgd.data[i*4+1]=255;imgd.data[i*4+2]=255;imgd.data[i*4+3]=60;}
+  }
+  hCtx.putImageData(imgd,0,0);
+
+  /* gérmenes */
+  var gpos=germPos(view);
+  var cols=['#E24B4A','#BA7517','#7F77DD','#D4537E','#C41E1D','#9E3A1D','#5533B7','#D4537E','#E24B4A','#7F77DD'];
+  gpos.forEach(function(g,i){
+    if(!isCleaned(view,g.x,g.y)){
+      var c=cols[i%cols.length];
+      hCtx.fillStyle=c;
+      hCtx.beginPath();hCtx.arc(g.x,g.y,7,0,Math.PI*2);hCtx.fill();
+      hCtx.fillStyle='rgba(255,255,255,0.5)';
+      hCtx.beginPath();hCtx.arc(g.x-2,g.y-2,2,0,Math.PI*2);hCtx.fill();
+      for(var s=0;s<5;s++){
+        var a=(s/5)*Math.PI*2;
+        hCtx.fillStyle=c;
+        hCtx.beginPath();hCtx.arc(g.x+Math.cos(a)*10,g.y+Math.sin(a)*10,2.5,0,Math.PI*2);hCtx.fill();
+      }
+    }
+  });
+}
+
+function germPos(view){
+  if(view==='dorso') return [{x:72,y:68},{x:95,y:55},{x:119,y:55},{x:143,y:63},{x:60,y:96},{x:88,y:118},{x:110,y:115},{x:133,y:118},{x:98,y:148},{x:122,y:150}];
+  return [{x:72,y:73},{x:95,y:60},{x:119,y:60},{x:143,y:68},{x:60,y:100},{x:90,y:130},{x:110,y:126},{x:130,y:130},{x:95,y:154},{x:125,y:154}];
+}
+
+function isCleaned(view,gx,gy){
+  var mask=view==='dorso'?dorsoMask:palmaMask;
+  var r=15,count=0,total=0;
+  for(var dy=-r;dy<=r;dy+=2){for(var dx=-r;dx<=r;dx+=2){if(dx*dx+dy*dy<=r*r){total++;var nx=Math.round(gx+dx),ny=Math.round(gy+dy);if(nx>=0&&nx<220&&ny>=0&&ny<220&&mask[ny*220+nx])count++;}}}
+  return total>0&&(count/total)>0.6;
+}
+
+function initWash(){
+  feedbackGiven=false;cleanDorso=0;cleanPalma=0;curView='dorso';
+  dorsoMask=new Uint8Array(220*220);
+  palmaMask=new Uint8Array(220*220);
+  document.getElementById('tab-dorso').className='side-tab active';
+  document.getElementById('tab-palma').className='side-tab';
+  document.getElementById('clean-fill').style.width='0%';
+  document.getElementById('clean-pct').textContent='0% limpio';
+  hCanvas=document.getElementById('hand-canvas');
+  hCtx=hCanvas.getContext('2d');
+  bindEvents();
+  /* pequeño delay para asegurar que el canvas es visible antes de dibujar */
+  setTimeout(function(){drawHand('dorso');},30);
+}
+
+function setView(v){
+  curView=v;
+  document.getElementById('tab-dorso').className='side-tab'+(v==='dorso'?' active':'');
+  document.getElementById('tab-palma').className='side-tab'+(v==='palma'?' active':'');
+  drawHand(v);updateBar();
+}
+
+function paintAt(x,y){
+  var mask=curView==='dorso'?dorsoMask:palmaMask;
+  var r=22;
+  for(var dy=-r;dy<=r;dy++){for(var dx=-r;dx<=r;dx++){if(dx*dx+dy*dy<=r*r){var nx=Math.round(x+dx),ny=Math.round(y+dy);if(nx>=0&&nx<220&&ny>=0&&ny<220)mask[ny*220+nx]=1;}}}
+  var gpos=germPos(curView);
+  var cleaned=0;
+  for(var i=0;i<gpos.length;i++){if(isCleaned(curView,gpos[i].x,gpos[i].y))cleaned++;}
+  var pct=Math.round(cleaned/gpos.length*100);
+  if(curView==='dorso')cleanDorso=pct;else cleanPalma=pct;
+  updateBar();drawHand(curView);
+  if(!feedbackGiven&&cleanDorso>=100&&cleanPalma>=100){
+    feedbackGiven=true;
+    setTimeout(function(){showFeedback(true,order[cur]);},300);
+  }
+}
+
+function updateBar(){
+  var avg=Math.round((cleanDorso+cleanPalma)/2);
+  document.getElementById('clean-fill').style.width=avg+'%';
+  document.getElementById('clean-pct').textContent=avg+'% limpio';
+}
+
+function getPos(e,c){
+  var r=c.getBoundingClientRect();
+  var sx=c.width/r.width,sy=c.height/r.height;
+  if(e.touches){var t=e.touches[0];return{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy};}
+  return{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};
+}
+
+function bindEvents(){
+  var c=hCanvas;
+  c.onmousedown=function(e){painting=true;var p=getPos(e,c);paintAt(p.x,p.y);};
+  c.onmousemove=function(e){if(!painting)return;var p=getPos(e,c);paintAt(p.x,p.y);};
+  c.onmouseup=function(){painting=false;};
+  c.onmouseleave=function(){painting=false;};
+  c.ontouchstart=function(e){e.preventDefault();painting=true;var p=getPos(e,c);paintAt(p.x,p.y);};
+  c.ontouchmove=function(e){e.preventDefault();if(!painting)return;var p=getPos(e,c);paintAt(p.x,p.y);};
+  c.ontouchend=function(){painting=false;};
+}
+
+function showFeedback(correct,s){
+  document.getElementById('fb-title').textContent=correct?'✅ ¡Respuesta correcta!':'❌ Respuesta incorrecta';
+  var box=document.getElementById('fb-box');
+  box.className='fb-box '+(correct?'fb-ok':'fb-err');
+  box.textContent=s.fb;
+  document.getElementById('fb-sub').textContent=s.req?'Esta situación sí requería lavado de manos':'Esta situación no requería lavado de manos';
+  if(correct)score++;
+  document.getElementById('next-btn').textContent=cur<4?'Siguiente situación →':'Ver resultados';
+  goTo('s5');
+}
+
+function nextScenario(){
+  cur++;
+  if(cur>=5)showResults();else{loadScene();goTo('s3');}
+}
+
+function showResults(){
+  document.getElementById('final-sc').textContent=score+'/5';
+  var g,m;
+  if(score===5){g='⭐ Excelente';m='¡Dominas la higiene de manos! Eres un modelo de atención segura.'}
+  else if(score===4){g='👍 Muy bien';m='Gran desempeño. Recuerda siempre identificar los momentos clave.'}
+  else if(score===3){g='📚 Bien';m='Vas por buen camino. Refuerza el conocimiento de las 5 indicaciones.'}
+  else if(score===2){g='⚠️ Regular';m='Es importante fortalecer el reconocimiento de los momentos de higiene.'}
+  else{g='🔄 A mejorar';m='Te recomendamos revisar el protocolo de higiene de manos de la institución.'}
+  document.getElementById('grade').textContent=g;
+  document.getElementById('grade-msg').textContent=m;
+  goTo('s6');
+}
+</script>
+</body>
+</html>
