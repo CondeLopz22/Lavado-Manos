@@ -159,6 +159,30 @@ var painting=false;
 var dorsoMask,palmaMask;
 var hCanvas,hCtx;
 var feedbackGiven=false;
+var HAND_IMAGE_SRC={dorso:'mano-dorso.png',palma:'mano-palma.png'};
+var handImages={dorso:null,palma:null};
+var handImagesTried=false;
+
+function loadHandImages(){
+  if(handImagesTried)return;
+  handImagesTried=true;
+  ['dorso','palma'].forEach(function(side){
+    var img=new Image();
+    img.onload=function(){
+      handImages[side]=img;
+      if(hCtx&&document.getElementById('s4').classList.contains('active')&&curView===side){drawHand(side);}
+    };
+    img.onerror=function(){handImages[side]=null;};
+    img.src=HAND_IMAGE_SRC[side];
+  });
+}
+
+function drawHandImage(view){
+  var img=handImages[view];
+  if(!img)return false;
+  hCtx.drawImage(img,0,0,220,220);
+  return true;
+}
 
 function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
 function goTo(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
@@ -193,87 +217,62 @@ function drawHand(view){
   if(!hCtx)return;
   hCtx.clearRect(0,0,220,220);
 
-  /* --- colores piel --- */
-  var skin   ='#E8A882';
-  var skinDk ='#C47050';
-  var skinMd ='#D48860';
-  var skinLt ='#F0C0A0';
-  var nail   ='#F0D0C8';
-
-  if(view==='dorso'){
-    /* Palma */
-    hCtx.fillStyle=skin;
-    hCtx.save();hCtx.translate(110,148);hCtx.scale(52,58);
-    hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
-
-    /* Dedos dorso */
-    var fd=[
-      {cx:72,cy:76,rx:12,ry:40,r:-0.18},
-      {cx:95,cy:63,rx:12,ry:46,r:-0.06},
-      {cx:119,cy:63,rx:12,ry:46,r:0.06},
-      {cx:143,cy:70,rx:11,ry:42,r:0.18},
-      {cx:58,cy:105,rx:9,ry:26,r:-0.48}
-    ];
-    fd.forEach(function(f){
-      hCtx.save();hCtx.translate(f.cx,f.cy);hCtx.rotate(f.r);
-      /* dedo */
+  if(!drawHandImage(view)){
+    /* --- fallback vectorial si no existe PNG --- */
+    var skin   ='#E8A882';
+    var skinDk ='#C47050';
+    var skinMd ='#D48860';
+    var skinLt ='#F0C0A0';
+    var nail   ='#F0D0C8';
+     
+    if(view==='dorso'){
       hCtx.fillStyle=skin;
-      hCtx.save();hCtx.scale(f.rx,f.ry);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
-      /* uña base */
-      hCtx.fillStyle=skinDk;
-      hCtx.save();hCtx.translate(0,-f.ry+12);hCtx.scale(f.rx-2,6);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
-      /* uña */
-      hCtx.fillStyle=nail;
-      hCtx.save();hCtx.translate(0,-f.ry+12);hCtx.scale(f.rx-4,5);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
-      /* nudillos */
-      hCtx.strokeStyle=skinDk;hCtx.lineWidth=0.8;
-      for(var k=0;k<2;k++){
-        var ky=-f.ry*0.25+k*11;
-        hCtx.beginPath();hCtx.moveTo(-f.rx+3,ky);hCtx.quadraticCurveTo(0,ky-3,f.rx-3,ky);hCtx.stroke();
-      }
-      hCtx.restore();
-    });
-    /* tendones */
-    hCtx.strokeStyle=skinDk;hCtx.lineWidth=0.9;
-    [[90,122,95,168],[110,118,110,170],[130,122,125,168]].forEach(function(l){
-      hCtx.beginPath();hCtx.moveTo(l[0],l[1]);hCtx.bezierCurveTo(l[0],l[1]+16,l[2],l[3]-16,l[2],l[3]);hCtx.stroke();
-    });
-
-  } else {
-    /* Palma interior */
-    hCtx.fillStyle=skinLt;
-    hCtx.save();hCtx.translate(110,150);hCtx.scale(53,56);
-    hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
-
-    /* Dedos palma */
-    var fp=[
-      {cx:72,cy:78,rx:12,ry:40,r:-0.18},
-      {cx:95,cy:64,rx:12,ry:46,r:-0.06},
-      {cx:119,cy:64,rx:12,ry:46,r:0.06},
-      {cx:143,cy:71,rx:11,ry:42,r:0.18},
-      {cx:58,cy:106,rx:9,ry:26,r:-0.48}
-    ];
-    fp.forEach(function(f){
-      hCtx.save();hCtx.translate(f.cx,f.cy);hCtx.rotate(f.r);
-      hCtx.fillStyle=skinLt;
-      hCtx.save();hCtx.scale(f.rx,f.ry);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
-      hCtx.strokeStyle=skinMd;hCtx.lineWidth=0.6;
-      hCtx.save();hCtx.scale(f.rx,f.ry);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.stroke();
-      hCtx.strokeStyle=skinMd;hCtx.lineWidth=0.7;
-      [-f.ry*0.2,f.ry*0.1].forEach(function(py){
-        hCtx.beginPath();hCtx.moveTo(-f.rx+3,py);hCtx.quadraticCurveTo(0,py-2,f.rx-3,py);hCtx.stroke();
+      hCtx.save();hCtx.translate(110,148);hCtx.scale(52,58);
+      hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+      var fd=[
+        {cx:72,cy:76,rx:12,ry:40,r:-0.18},{cx:95,cy:63,rx:12,ry:46,r:-0.06},
+        {cx:119,cy:63,rx:12,ry:46,r:0.06},{cx:143,cy:70,rx:11,ry:42,r:0.18},{cx:58,cy:105,rx:9,ry:26,r:-0.48}
+      ];
+      fd.forEach(function(f){
+        hCtx.save();hCtx.translate(f.cx,f.cy);hCtx.rotate(f.r);
+        hCtx.fillStyle=skin;
+        hCtx.save();hCtx.scale(f.rx,f.ry);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+        hCtx.fillStyle=skinDk;
+        hCtx.save();hCtx.translate(0,-f.ry+12);hCtx.scale(f.rx-2,6);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+        hCtx.fillStyle=nail;
+        hCtx.save();hCtx.translate(0,-f.ry+12);hCtx.scale(f.rx-4,5);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+        hCtx.strokeStyle=skinDk;hCtx.lineWidth=0.8;
+        for(var k=0;k<2;k++){var ky=-f.ry*0.25+k*11;hCtx.beginPath();hCtx.moveTo(-f.rx+3,ky);hCtx.quadraticCurveTo(0,ky-3,f.rx-3,ky);hCtx.stroke();}
+        hCtx.restore();
       });
-      hCtx.restore();
-    });
-    /* líneas de la palma */
-    hCtx.strokeStyle=skinMd;hCtx.lineWidth=1.2;
-    hCtx.beginPath();hCtx.moveTo(76,128);hCtx.bezierCurveTo(90,120,126,122,148,130);hCtx.stroke();
-    hCtx.beginPath();hCtx.moveTo(76,143);hCtx.bezierCurveTo(96,136,130,137,150,144);hCtx.stroke();
-    hCtx.beginPath();hCtx.moveTo(91,118);hCtx.bezierCurveTo(83,136,79,156,83,175);hCtx.stroke();
-    /* monte de Venus */
-    hCtx.fillStyle=skinMd;
-    hCtx.save();hCtx.translate(108,153);hCtx.scale(16,19);
-    hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+      hCtx.strokeStyle=skinDk;hCtx.lineWidth=0.9;
+      [[90,122,95,168],[110,118,110,170],[130,122,125,168]].forEach(function(l){hCtx.beginPath();hCtx.moveTo(l[0],l[1]);hCtx.bezierCurveTo(l[0],l[1]+16,l[2],l[3]-16,l[2],l[3]);hCtx.stroke();});
+    } else {
+      hCtx.fillStyle=skinLt;
+      hCtx.save();hCtx.translate(110,150);hCtx.scale(53,56);
+      hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+      var fp=[
+        {cx:72,cy:78,rx:12,ry:40,r:-0.18},{cx:95,cy:64,rx:12,ry:46,r:-0.06},
+        {cx:119,cy:64,rx:12,ry:46,r:0.06},{cx:143,cy:71,rx:11,ry:42,r:0.18},{cx:58,cy:106,rx:9,ry:26,r:-0.48}
+      ];
+      fp.forEach(function(f){
+        hCtx.save();hCtx.translate(f.cx,f.cy);hCtx.rotate(f.r);
+        hCtx.fillStyle=skinLt;
+        hCtx.save();hCtx.scale(f.rx,f.ry);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+        hCtx.strokeStyle=skinMd;hCtx.lineWidth=0.6;
+        hCtx.save();hCtx.scale(f.rx,f.ry);hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.stroke();
+        hCtx.strokeStyle=skinMd;hCtx.lineWidth=0.7;
+        [-f.ry*0.2,f.ry*0.1].forEach(function(py){hCtx.beginPath();hCtx.moveTo(-f.rx+3,py);hCtx.quadraticCurveTo(0,py-2,f.rx-3,py);hCtx.stroke();});
+        hCtx.restore();
+      });
+      hCtx.strokeStyle=skinMd;hCtx.lineWidth=1.2;
+      hCtx.beginPath();hCtx.moveTo(76,128);hCtx.bezierCurveTo(90,120,126,122,148,130);hCtx.stroke();
+      hCtx.beginPath();hCtx.moveTo(76,143);hCtx.bezierCurveTo(96,136,130,137,150,144);hCtx.stroke();
+      hCtx.beginPath();hCtx.moveTo(91,118);hCtx.bezierCurveTo(83,136,79,156,83,175);hCtx.stroke();
+      hCtx.fillStyle=skinMd;
+      hCtx.save();hCtx.translate(108,153);hCtx.scale(16,19);
+      hCtx.beginPath();hCtx.arc(0,0,1,0,Math.PI*2);hCtx.restore();hCtx.fill();
+    }
   }
 
   /* overlay zonas frotadas */
@@ -328,6 +327,7 @@ function initWash(){
   document.getElementById('clean-pct').textContent='0% limpio';
   hCanvas=document.getElementById('hand-canvas');
   hCtx=hCanvas.getContext('2d');
+  loadHandImages();
   bindEvents();
   /* pequeño delay para asegurar que el canvas es visible antes de dibujar */
   setTimeout(function(){drawHand('dorso');},30);
