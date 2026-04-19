@@ -161,18 +161,21 @@ var hCanvas,hCtx;
 var feedbackGiven=false;
 var HAND_IMAGE_SRC={dorso:'mano-dorso.png',palma:'mano-palma.png'};
 var handImages={dorso:null,palma:null};
+var handImageState={dorso:'idle',palma:'idle'}; /* idle | pending | ready | error */
 var handImagesTried=false;
 
 function loadHandImages(){
   if(handImagesTried)return;
   handImagesTried=true;
   ['dorso','palma'].forEach(function(side){
+   handImageState[side]='pending';
     var img=new Image();
     img.onload=function(){
       handImages[side]=img;
+      handImageState[side]='ready';
       if(hCtx&&document.getElementById('s4').classList.contains('active')&&curView===side){drawHand(side);}
     };
-    img.onerror=function(){handImages[side]=null;};
+    img.onerror=function(){handImages[side]=null;handImageState[side]='error';if(hCtx&&document.getElementById('s4').classList.contains('active')&&curView===side){drawHand(side);}};
     img.src=HAND_IMAGE_SRC[side];
   });
 }
@@ -216,6 +219,11 @@ function drawEllipse(ctx,cx,cy,rx,ry){
 function drawHand(view){
   if(!hCtx)return;
   hCtx.clearRect(0,0,220,220);
+
+   /* Si hay PNG configurado y aún está cargando, evitamos mostrar el fallback un frame. */
+  if(handImageState[view]==='pending'){
+    return;
+  }
 
   if(!drawHandImage(view)){
     /* --- fallback vectorial si no existe PNG --- */
@@ -332,6 +340,9 @@ function initWash(){
   /* pequeño delay para asegurar que el canvas es visible antes de dibujar */
   setTimeout(function(){drawHand('dorso');},30);
 }
+
+/* Pre-carga temprana para evitar parpadeo al entrar por primera vez a la pantalla de lavado. */
+loadHandImages();
 
 function setView(v){
   curView=v;
